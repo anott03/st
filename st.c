@@ -373,8 +373,7 @@ static const char base64_digits[] = {
 char
 base64dec_getc(const char **src)
 {
-	while (**src && !isprint(**src))
-		(*src)++;
+	while (**src && !isprint(**src)) (*src)++;
 	return **src ? *((*src)++) : '=';  /* emulate padding if string ends */
 }
 
@@ -672,7 +671,7 @@ die(const char *errstr, ...)
 void
 execsh(char *cmd, char **args)
 {
-	char *sh, *prog, *arg;
+	char *sh, *prog;
 	const struct passwd *pw;
 
 	errno = 0;
@@ -686,20 +685,13 @@ execsh(char *cmd, char **args)
 	if ((sh = getenv("SHELL")) == NULL)
 		sh = (pw->pw_shell[0]) ? pw->pw_shell : cmd;
 
-	if (args) {
+	if (args)
 		prog = args[0];
-		arg = NULL;
-	} else if (scroll) {
-		prog = scroll;
-		arg = utmp ? utmp : sh;
-	} else if (utmp) {
+	else if (utmp)
 		prog = utmp;
-		arg = NULL;
-	} else {
+	else
 		prog = sh;
-		arg = NULL;
-	}
-	DEFAULT(args, ((char *[]) {prog, arg, NULL}));
+	DEFAULT(args, ((char *[]) {prog, NULL}));
 
 	unsetenv("COLUMNS");
 	unsetenv("LINES");
@@ -830,26 +822,21 @@ ttyread(void)
 {
 	static char buf[BUFSIZ];
 	static int buflen = 0;
-	int ret, written;
+	int written;
+	int ret;
 
 	/* append read bytes to unprocessed bytes */
-	ret = read(cmdfd, buf+buflen, LEN(buf)-buflen);
-
-	switch (ret) {
-	case 0:
-		exit(0);
-	case -1:
+	if ((ret = read(cmdfd, buf+buflen, LEN(buf)-buflen)) < 0)
 		die("couldn't read from shell: %s\n", strerror(errno));
-	default:
-		buflen += ret;
-		written = twrite(buf, buflen, 0);
-		buflen -= written;
-		/* keep any incomplete UTF-8 byte sequence for the next call */
-		if (buflen > 0)
-			memmove(buf, buf + written, buflen);
-		return ret;
+	buflen += ret;
 
-	}
+	written = twrite(buf, buflen, 0);
+	buflen -= written;
+	/* keep any uncomplete utf8 char for the next call */
+	if (buflen > 0)
+		memmove(buf, buf + written, buflen);
+
+	return ret;
 }
 
 void
@@ -1058,6 +1045,11 @@ tnew(int col, int row)
 	treset();
 }
 
+int tisaltscr(void)
+{
+	return IS_SET(MODE_ALTSCREEN);
+}
+
 void
 tswapscreen(void)
 {
@@ -1126,8 +1118,7 @@ tscrolldown(int orig, int n, int copyhist)
 		term.line[i-n] = temp;
 	}
 
-	if (term.scr == 0)
-		selscroll(orig, n);
+	selscroll(orig, n);
 }
 
 void
@@ -1157,8 +1148,7 @@ tscrollup(int orig, int n, int copyhist)
 		term.line[i+n] = temp;
 	}
 
-	if (term.scr == 0)
-		selscroll(orig, -n);
+	selscroll(orig, -n);
 }
 
 void
@@ -1995,6 +1985,59 @@ strparse(void)
 }
 
 void
+externalpipe(const Arg *arg)
+{
+	int to[2];
+	char buf[UTF_SIZ];
+	void (*oldsigpipe)(int);
+	Glyph *bp, *end;
+	int lastpos, n, newline;
+
+	if (pipe(to) == -1)
+		return;
+
+	switch (fork()) {
+	case -1:
+		close(to[0]);
+		close(to[1]);
+		return;
+	case 0:
+		dup2(to[0], STDIN_FILENO);
+		close(to[0]);
+		close(to[1]);
+		execvp(((char **)arg->v)[0], (char **)arg->v);
+		fprintf(stderr, "st: execvp %s\n", ((char **)arg->v)[0]);
+		perror("failed");
+		exit(0);
+	}
+
+	close(to[0]);
+	/* ignore sigpipe for now, in case child exists early */
+	oldsigpipe = signal(SIGPIPE, SIG_IGN);
+	newline = 0;
+	for (n = 0; n < term.row; n++) {
+		bp = term.line[n];
+		lastpos = MIN(tlinelen(n) + 1, term.col) - 1;
+		if (lastpos < 0)
+			break;
+		end = &bp[lastpos + 1];
+		for (; bp < end; ++bp)
+			if (xwrite(to[1], buf, utf8encode(bp->u, buf)) < 0)
+				break;
+		if ((newline = term.line[n][lastpos].mode & ATTR_WRAP))
+			continue;
+		if (xwrite(to[1], "\n", 1) < 0)
+			break;
+		newline = 0;
+	}
+	if (newline)
+		(void)xwrite(to[1], "\n", 1);
+	close(to[1]);
+	/* restore */
+	signal(SIGPIPE, oldsigpipe);
+}
+
+void
 strdump(void)
 {
 	size_t i;
@@ -2641,7 +2684,6 @@ void
 drawregion(int x1, int y1, int x2, int y2)
 {
 	int y;
-
 	for (y = y1; y < y2; y++) {
 		if (!term.dirty[y])
 			continue;
@@ -2654,7 +2696,7 @@ drawregion(int x1, int y1, int x2, int y2)
 void
 draw(void)
 {
-	int cx = term.c.x, ocx = term.ocx, ocy = term.ocy;
+	int cx = term.c.x;
 
 	if (!xstartdraw())
 		return;
@@ -2671,11 +2713,9 @@ draw(void)
 	if (term.scr == 0)
 		xdrawcursor(cx, term.c.y, term.line[term.c.y][cx],
 				term.ocx, term.ocy, term.line[term.ocy][term.ocx]);
-	term.ocx = cx;
-	term.ocy = term.c.y;
+	term.ocx = cx, term.ocy = term.c.y;
 	xfinishdraw();
-	if (ocx != term.ocx || ocy != term.ocy)
-		xximspot(term.ocx, term.ocy);
+	xximspot(term.ocx, term.ocy);
 }
 
 void
