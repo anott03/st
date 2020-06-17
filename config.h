@@ -84,7 +84,8 @@ unsigned int tabspaces = 8;
  * 0xee adds wee bit of transparency.
  * Play with the value to get desired transparency.
  */
-unsigned int alpha = 0xef; 
+// 80% opacity (255 * .8 = 204)
+unsigned int alpha = 0xe8; 
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
@@ -192,8 +193,8 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
-	{ TERMMOD,            	XK_U,     			kscrollup,      {.i = -1} },
-	{ TERMMOD,              XK_D,   				kscrolldown,    {.i = -1} },
+	{ TERMMOD,            	XK_U,     			kscrollup,      {.i =  1} },
+	{ TERMMOD,              XK_D,   				kscrolldown,    {.i =  1} },
 };
 
 /*
