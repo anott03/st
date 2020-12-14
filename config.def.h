@@ -1,5 +1,9 @@
-static char *font = "Fira Code:pixelsize=14:antialias=true:autohint=true";
-static int borderpx = 2;
+/* See LICENSE file for copyright and license details. */
+/* appearance */
+
+// Fira Code must be installed (available on arch official repositores)
+static char *font = "FiraCode Nerd Font:pixelsize=13:antialias=true:autohint=true";
+static int borderpx = 5;
 
 /*
  * What program is execed by st depends of these precedence rules:
@@ -80,37 +84,70 @@ unsigned int tabspaces = 8;
  * 0xee adds wee bit of transparency.
  * Play with the value to get desired transparency.
  */
-unsigned int alpha = 0xee; 
+// 80% opacity (255 * .8 = 204)
+// unsigned int alpha = 0xe8; 
+// unsigned int alpha = 0xe6; 
+unsigned int alpha = 0xff; 
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-	/* 8 normal colors */
-	"#292d3e", // black
-	"#f07178", // red
-	"#c3e88d", // green
-	"#ffcb6b", // yellow
-	"#82aaff", // blue
-	"#c792ea", // magenta
-	"#89ddff", // cyan
-	"#d0d0d0", // white
+  // [> 8 normal colors <]
+  "#292d3e", // black
+  "#f07178", // red
+  "#c3e88d", // green
+  "#ffcb6b", // yellow
+  "#82aaff", // blue
+  "#c792ea", // magenta
+  "#89ddff", // cyan
+  "#d0d0d0", // white
 
-	/* 8 bright colors */
-	"#434758", // black
-	"#ff8b92", // red
-	"#ddffa7", // green
-	"#ffe585", // yellow
-	"#9cc4ff", // blue
-	"#e1acff", // magenta
-	"#a3f7ff", // cyan
-	"#ffffff", // white
+  // [> 8 bright colors <]
+  "#434758", // black
+  "#ff8b92", // red
+  "#ddffa7", // green
+  "#ffe585", // yellow
+  "#9cc4ff", // blue
+  "#e1acff", // magenta
+  "#a3f7ff", // cyan
+  "#ffffff", // white
 
-	[255] = 0,
+  [255] = 0,
 
-	/* more colors can be added after 255 to use with DefaultXX */
-	"#282a36",
-	"#bbc5ff",
-	"#d7d7d7",
+  // [> more colors can be added after 255 to use with DefaultXX <]
+  "#282a36",
+  "#bbc5ff",
+  "#d7d7d7",
 };
+
+// gruvbox
+// static const char *colorname[] = {
+	// [> 8 normal colors <]
+	// "#282828", // black
+	// "#cc241d", // red
+	// "#98971a", // green
+	// "#d79921", // yellow
+	// "#458588", // blue
+	// "#b16286", // magenta
+	// "#689d6a", // cyan
+	// "#a89984", // white
+
+	// [> 8 bright colors <]
+	// "#928364", // black
+	// "#fb4934", // red
+	// "#b8bb26", // green
+	// "#fabd2f", // yellow
+	// "#83a598", // blue
+	// "#d3869b", // magenta
+	// "#8ec07c", // cyan
+	// "#ebdbb2", // white
+
+	// [255] = 0,
+
+	// [> more colors can be added after 255 to use with DefaultXX <]
+	// "#282a36",
+	// "#bbc5ff",
+	// "#d7d7d7",
+// };
 
 /*
  * Default colors (colorname index)
@@ -183,13 +220,13 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_K,       		zoom,           {.f = +1} },
 	{ TERMMOD,              XK_J,        		zoom,           {.f = -1} },
 	{ TERMMOD,              XK_Home,        zoomreset,      {.f =  0} },
-	{ TERMMOD,              XK_C,           clipcopy,       {.i =  0} },
-	{ TERMMOD,              XK_V,           clippaste,      {.i =  0} },
+	{ TERMMOD,              XK_Y,           clipcopy,       {.i =  0} },
+	{ TERMMOD,              XK_P,           clippaste,      {.i =  0} },
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
-	{ TERMMOD,            	XK_U,     			kscrollup,      {.i = -1} },
-	{ TERMMOD,              XK_D,   				kscrolldown,    {.i = -1} },
+	{ TERMMOD,            	XK_U,     			kscrollup,      {.i =  1} },
+	{ TERMMOD,              XK_D,   				kscrolldown,    {.i =  1} },
 };
 
 /*
